@@ -18,6 +18,7 @@ import { warmupShutdown } from './middleware/cache-warmer/actions'
 import { shutdown } from './middleware/error-backoff/actions'
 import { AddressInfo } from 'net'
 import { WSReset } from './middleware/ws/actions'
+import process from 'process'
 
 const app = express()
 const version = getEnv('npm_package_version')
@@ -32,7 +33,13 @@ export const initHandler =
   (adapterContext: AdapterContext, execute: Execute, middleware: Middleware[]) =>
   async (): Promise<http.Server> => {
     const name = adapterContext.name || ''
-    const envDefaultOverrides = adapterContext.envDefaultOverrides
+    const envDefaultOverrides: Record<string, string> | undefined =
+      adapterContext.envDefaultOverrides
+    for (const key in envDefaultOverrides) {
+      if (!process.env[key]) {
+        process.env[key] = envDefaultOverrides[key]
+      }
+    }
     const context: AdapterContext = {
       name,
       envDefaultOverrides,
